@@ -1,0 +1,128 @@
+/* ===== 结算界面样式（与主界面同尺寸）===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  height: 100%;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+body {
+  background: #dfe8f0;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* 手机外框：与主界面相同尺寸，覆盖主界面 */
+.phone {
+  width: 100%;
+  max-width: 420px;
+  height: 100vh;
+  height: 100dvh;
+  background: linear-gradient(180deg, #2b3a67 0%, #17203d 100%);
+  padding: 24px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel {
+  width: 100%;
+  text-align: center;
+  color: #fff;
+}
+
+.icon {
+  font-size: 64px;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 0 16px rgba(255, 209, 102, 0.5));
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+
+.sub {
+  font-size: 13px;
+  color: #aab6e8;
+  margin: 4px 0 26px;
+  letter-spacing: 1px;
+}
+
+/* ---- 正常完成：搞笑评价 ---- */
+.eval {
+  margin: 18px 0 10px;
+}
+
+.eval-realm {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #ffd166;
+  margin-bottom: 6px;
+  text-shadow: 0 0 14px rgba(255, 209, 102, 0.35);
+}
+
+.eval-focus {
+  font-size: 14px;
+  font-weight: 600;
+  color: #aef0ff;
+  margin-bottom: 14px;
+  letter-spacing: 1px;
+}
+
+.eval-text {
+  font-family: "KaiTi", "楷体", serif;
+  font-size: 15px;
+  line-height: 1.9;
+  color: #e8ecff;
+  letter-spacing: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 6px;
+}
+
+.restart-btn {
+  appearance: none;
+  border: none;
+  border-radius: 28px;
+  width: 70%;
+  max-width: 260px;
+  padding: 14px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  color: #1e2b4f;
+  background: linear-gradient(135deg, #ffd166, #ff9f43);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  transition: transform 0.08s ease;
+}
+
+.restart-btn:active {
+  transform: scale(0.97);
+}
+
+/* ---- 失败模式：压力值过高 ---- */
+.panel.fail .icon {
+  filter: drop-shadow(0 0 16px rgba(255, 90, 90, 0.6));
+}
+
+.panel.fail .title {
+  color: #ffb3b3;             /* 淡红标题，突出失败 */
+  text-shadow: 0 0 12px rgba(255, 80, 80, 0.45);
+}
+
+.panel.fail .sub {
+  color: #ffd6c9;
+}

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>奶龙捧腹笑</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <button class="event-close" id="eventClose" aria-label="关闭">×</button>
+  <div class="nairong-wrap">
+    <div id="nairong" alt="奶龙"></div>
+    <div class="hotspot" id="hotspot"></div>
+  </div>
+  <div class="hint" id="eventHint">点下我的肚肚</div>
+  <audio id="laughAudio" src="捧腹笑音频.mp3" preload="auto"></audio>
+
+  <script>
+    var FPS = 30;
+
+    // 两张精灵图：每行固定 4 帧；行数由帧数推算（rows = ceil(frames/4)）
+    // idle  : 原 01~60 帧（60 帧）
+    // laugh : 原 61~122 帧（62 帧）
+    var SHEET_IDLE  = { src: 'idle.png',  cols: 4, frames: 60 };
+    var SHEET_LAUGH = { src: 'laugh.png', cols: 4, frames: 62 };
+
+    var idle = null, laugh = null;   // 两张图的尺寸数据，onload 后填充
+
+    var nairong = document.getElementById('nairong');
+    var eventHint = document.getElementById('eventHint');
+    var eventClose = document.getElementById('eventClose');
+    var hotspot = document.getElementById('hotspot');
+    var laughAudio = document.getElementById('laughAudio');
+    var idleTimer = null, laughTimer = null;
+    var committed = false;   // 是否已点击肚肚（选择二），点后即应扣注意力
+
+    // 通知父页面（学习页）
+    function tell(action) {
+      try { parent.postMessage({ src: 'nairong', action: action }, '*'); } catch (e) { /* ignore */ }
+    }
+
+    function stopAllFrames() {
+      clearInterval(idleTimer); idleTimer = null;
+      clearTimeout(laughTimer); laughTimer = null;
+      laughAudio.pause(); laughAudio.currentTime = 0;
+    }
+
+    // 载入精灵图，并按 naturalWidth/naturalHeight 动态算出每帧尺寸。
+    // 这样不写死原图分辨率，即便图片实际尺寸略有出入也能正确取帧。
+    function loadSheet(cfg) {
+      var img = new Image();
+      img.onload = function () {
+        cfg.rows   = Math.ceil(cfg.frames / cfg.cols);          // 行数 = 帧数 ÷ 每行帧数（向上取整）
+        cfg.frameW = img.naturalWidth  / cfg.cols;              // 单帧原始宽
+        cfg.frameH = img.naturalHeight / cfg.rows;              // 单帧原始高
+        cfg.dispW  = 220;                                       // 显示宽度
+        cfg.dispH  = Math.round(cfg.dispW * cfg.frameH / cfg.frameW); // 高随宽高比
+        cfg.bgW    = cfg.cols * cfg.dispW;                      // 整张图缩放后的宽
+        cfg.bgH    = cfg.rows * cfg.dispH;                      // 整张图缩放后的高
+        cfg.img    = img;
+        if (idle && laugh) startIdle();                         // 两张都就绪后再开播
+      };
+      img.src = cfg.src;
+    }
+
+    // 显示某张图 cfg 的第 n 帧（1 起）
+    function showFrame(cfg, n) {
+      var idx = n - 1;
+      var col = idx % cfg.cols;                 // 列号 0..3
+      var row = Math.floor(idx / cfg.cols);     // 行号 0..rows-1
+      nairong.style.backgroundImage  = 'url(' + cfg.src + ')';
+      nairong.style.backgroundSize   = cfg.bgW + 'px ' + cfg.bgH + 'px';
+      nairong.style.backgroundPosition = (-col * cfg.dispW) + 'px ' + (-row * cfg.dispH) + 'px';
+    }
+
+    // 空闲循环：idle 帧 1..60
+    function startIdle() {
+      stopAllFrames();
+      committed = false;   // 回到空闲，重置已点肚肚状态
+      eventHint.textContent = '点下我的肚肚';
+      var n = 1;
+      showFrame(idle, n);
+      idleTimer = setInterval(function () {
+        n = (n % idle.frames) + 1;   // 1..60 循环
+        showFrame(idle, n);
+      }, 1000 / FPS);
+    }
+
+    // 捧腹笑：laugh 帧 1..62 + 音频，播完自动通知并回到空闲
+    function startLaugh() {
+      committed = true;    // 已选择二：看捧腹笑 → 应扣注意力
+      stopAllFrames();
+      eventHint.textContent = '';
+      laughAudio.currentTime = 0;
+      laughAudio.play();
+      var n = 1;
+      showFrame(laugh, n);
+      (function tick() {
+        if (n < laugh.frames) {
+          n += 1;
+          showFrame(laugh, n);
+          laughTimer = setTimeout(tick, 1000 / FPS);
+        } else {
+          laughAudio.pause();
+          tell('laugh-done');
+          startIdle();
+        }
+      })();
+    }
+
+    // 选择一：点叉 → 告诉父页面关闭
+    // 若已点过肚肚（选择了二），中途点叉同样要扣注意力
+    eventClose.addEventListener('click', function () {
+      var wasCommitted = committed;
+      stopAllFrames();
+      tell(wasCommitted ? 'x-deduct' : 'x');
+      startIdle();   // committed 在此重置为 false
+    });
+
+    // 选择二：点中心区域 → 播放捧腹笑
+    hotspot.addEventListener('click', function () {
+      startLaugh();
+    });
+
+    idle = SHEET_IDLE;
+    laugh = SHEET_LAUGH;
+    loadSheet(idle);
+    loadSheet(laugh);
+  </script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+/* ===== 主界面样式 ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  height: 100%;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+body {
+  background: #dfe8f0;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;   /* 整屏显示，不滚动；内容紧凑保证不会被裁掉 */
+}
+
+/* ===== 背景配置区（以后想调整背景就在这里改这几个变量）===== */
+:root {
+  --bg-image: url('背景图片.png');   /* 背景图文件路径 */
+  --bg-darkness: 0.32;               /* 暗度：0=不暗 1=全黑，越大越暗 */
+  --glass-blur: 10px;                /* 磨砂质感：模糊强度，越大越糊 */
+  --glass-alpha: 0.55;               /* 面板半透明度：越小越透出背景 */
+}
+
+
+/* 手机外框：占满可视高度，手机电脑都适配 */
+.phone {
+  width: 100%;
+  max-width: 420px;
+  height: 100vh;
+  height: 100dvh;
+  position: relative;
+  /* 背景图铺满 + 一层暗色叠加层（暗度用 --bg-darkness 调） */
+  background:
+    linear-gradient(rgb(8 16 36 / var(--bg-darkness)), rgb(8 16 36 / var(--bg-darkness))),
+    var(--bg-image) center / cover no-repeat;
+  padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ---- 学习境界 + 经验条（固定）---- */
+.realm-box {
+  background: rgba(255, 255, 255, var(--glass-alpha));   /* 半透明白 + 磨砂 */
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 14px;
+  padding: 8px 14px;
+  flex: 0 0 auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* 天数：楷书，正好压在经验数值上方 */
+.day-label {
+  font-family: "KaiTi", "STKaiti", "楷体", "楷书", serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #2c3e50;
+  letter-spacing: 2px;
+  line-height: 1;
+  margin-bottom: 2px;         /* 紧贴下方经验数值 */
+}
+
+.day-total {
+  font-size: 13px;
+  color: #8a9bb0;
+}
+
+.realm-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.realm-img {
+  height: 60px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* 右侧列：天数在经验数值正上方，靠右对齐 */
+.realm-right {
+  margin-left: auto;          /* 推到最右侧，位于境界图标旁边 */
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;      /* 天数与经验数值右对齐，上下叠放 */
+}
+
+.exp-value {
+  font-size: 12px;
+  color: #7d93ab;
+  font-variant-numeric: tabular-nums;
+}
+
+.exp-bar {
+  height: 6px;
+  background: rgba(228, 236, 245, 0.8);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* 轨道内凹陷效果 */
+}
+
+.exp-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #cde4f3, #4d5f60);
+  border-radius: 8px;
+  box-shadow: 0 0 8px rgba(255, 159, 67, 0.6); /* 进度条金色外发光 */
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---- 三个数据容器（固定）---- */
+.stats {
+  display: flex;
+  gap: 16px;
+  flex: 0 0 auto;
+}
+
+.stat {
+  /* 核心：内部改为横向同行排列 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+
+  /* 简约化卡片：半透明白 + 磨砂 */
+  flex: 1;
+  background: rgba(255, 255, 255, var(--glass-alpha));
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-radius: 8px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: none;
+}
+
+/* 用伪元素加冒号，无需修改HTML */
+.stat-label::after {
+  content: "：";
+}
+
+.stat-label {
+  font-size: 14px; /* 和数值字号统一 */
+  color: #5a6f85;
+  margin-bottom: 0; /* 取消原有的下边距 */
+}
+
+.stat-value {
+  font-size: 14px; /* 和标签大小完全一致 */
+  font-weight: 500; /* 取消超粗字重，改为中等粗细 */
+  font-variant-numeric: tabular-nums; /* 保留等宽数字，对齐更整齐 */
+}
+.stat .stat-value { color: #5a6f85; }
+
+
+/* ---- 中间：滚动叙事日志面板，占用中间剩余高度，保证下方按钮大小不变 ---- */
+.mid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- 四个功能按钮：一个大容器，按钮大小固定、始终一致 ---- */
+.actions {
+  flex: 0 0 auto;                 /* 不随窗口大小伸缩 */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 78px 78px;  /* 两行固定高度，四个按钮始终一样大 */
+  gap: 8px;
+}
+
+.action-btn {
+  appearance: none;
+  border: none;
+  background-color:transparent;   /* 图片本身透明，背景透明透出后面 */
+  background-size: contain;        /* 完整显示整张透明图，不裁剪不变形 */
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 0;
+  height: 88px;
+  cursor: pointer;
+  color: #fff;
+  position: relative;              /* 让文字能按图片位置绝对定位 */
+  transition: transform 0.08s ease;
+}
+
+.action-btn:active {
+  transform: translateY(2px) scale(0.98);
+}
+
+.btn-name {
+  position: absolute;
+  left: 52%;                                     /* 文字左上角：右下1/4块内部（图片中心偏右下） */
+  top: 52%;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #fff;                                   /* 白字 */
+  text-shadow:                                   /* 外面浅蓝勾勒 */
+    -1px -1px 0 #8fcaff, 1px -1px 0 #8fcaff,
+    -1px  1px 0 #8fcaff, 1px  1px 0 #8fcaff,
+     0   -1px 0 #8fcaff, 0   1px 0 #8fcaff,
+    -1px  0   0 #8fcaff, 1px  0   0 #8fcaff;
+}
+
+.action-btn.study {
+  background-image: url('按键图片/学习.png');
+}
+.action-btn.phone {
+  background-image: url('按键图片/玩手机.png');
+}
+.action-btn.leisure {
+  background-image: url('按键图片/休闲.png');
+}
+.action-btn.sleep {
+  background-image: url('按键图片/睡觉.png');
+}
+
+.foot {
+  text-align: center;
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: #a4b4c6;
+  letter-spacing: 1px;
+}
+
+/* ---- 学习结果提示：渐显渐隐 ---- */
+.report {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+  transition: opacity 0.5s ease;
+}
+
+.report.show {
+  opacity: 1;
+}
+
+.report-line {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.9;
+  white-space: nowrap;
+  letter-spacing: 1px;
+}
+
+/* ---- 通用提示：一行小字 渐显渐隐 ---- */
+.toast {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin-top: 60px;   /* 稍微偏下，避开中央数字 */
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 6;
+  transition: opacity 0.5s ease;
+}
+
+.toast.show {
+  opacity: 1;
+}
+
+/* ---- 睡觉提示：屏幕中央稍大文字 渐显渐隐 ---- */
+.newday {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  font-family: "KaiTi", "STKaiti", "楷体", "楷书", serif;
+  font-size: 20px;           /* 比 toast（13px）稍大 */
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #141313;               /* 灰色 */
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 7;
+  transition: opacity 0.5s ease;
+}
+
+.newday.show {
+  opacity: 1;
+}

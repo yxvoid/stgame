@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>学习模拟 - 第1天</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="滚动叙事日志面板/style.css">
+  <link rel="stylesheet" href="随机事件/随机事件.css">
+</head>
+<body>
+  <div class="phone">
+    <!-- a容器：学习境界 + 经验条 -->
+    <section class="realm-box">
+      <div class="realm-row">
+        <img class="realm-img" id="realmImg" src="境界图片/学渣境.png" alt="学渣境">
+        <!-- 右侧列：天数（楷书）位于经验数值正上方 -->
+        <div class="realm-right">
+          <h1 class="day-label" id="dayLabel">第 1 天</h1>
+          <span class="exp-value" id="expValue">0 / 50</span>
+        </div>
+      </div>
+      <div class="exp-bar">
+        <div class="exp-fill" id="expFill"></div>
+      </div>
+    </section>
+
+    <!-- 三个数据容器 -->
+    <section class="stats">
+      <div class="stat energy">
+        <div class="stat-label">精力值</div>
+        <div class="stat-value" id="energy">10</div>
+      </div>
+      <div class="stat stress">
+        <div class="stat-label">压力值</div>
+        <div class="stat-value" id="stress">0</div>
+      </div>
+      <div class="stat attention">
+        <div class="stat-label">注意力</div>
+        <div class="stat-value" id="attention">10</div>
+      </div>
+    </section>
+
+    <!-- 中间：滚动叙事日志面板，记录 10 天学习过程 -->
+    <section class="mid" id="contentArea">
+      <div class="log-panel" id="logPanel">
+        <div class="log-inner" id="logInner"></div>
+      </div>
+    </section>
+
+    <!-- 四个功能按钮：统一放在一个大容器中 -->
+    <div class="actions">
+      <button class="action-btn study" data-target="../按键【学习】/index.html">
+        <span class="btn-name">学习</span>
+      </button>
+      <button class="action-btn phone" id="phoneBtn">
+        <span class="btn-name">玩手机</span>
+      </button>
+      <button class="action-btn leisure" id="leisureBtn">
+        <span class="btn-name">休闲</span>
+      </button>
+      <button class="action-btn sleep" id="sleepBtn">
+        <span class="btn-name">睡觉</span>
+      </button>
+    </div>
+
+    <footer class="foot">愿今天的学习充满收获</footer>
+
+    <!-- 学习结果提示：三行黑色小字（渐显渐隐） -->
+    <div class="report" id="report"></div>
+    <!-- 通用提示：一行小字（渐显渐隐） -->
+    <div class="toast" id="toast"></div>
+    <!-- 睡觉提示：屏幕中央稍大文字（渐显渐隐） -->
+    <div class="newday" id="newday"></div>
+  </div>
+
+  <script src="滚动叙事日志面板/滚动叙事日志面板.js"></script>
+  <script src="../按键【玩手机】/玩手机事件.js"></script>
+  <script src="../按键【休闲】/休闲事件.js"></script>
+  <script src="随机事件/随机事件.js"></script>
+  <script>
+    // ===== 游戏状态管理（localStorage 全局共享）=====
+    const STATE_KEY = 'study_game_state';
+
+    // 学习境界：按累计经验分档
+ const REALMS = [
+      { name: '学渣境', min: 0 },
+      { name: '学子境', min: 50 },
+      { name: '学友境', min: 150 },
+      { name: '学者境', min: 300 },
+      { name: '学霸境', min: 500 },
+      { name: '学神境', min: 800 }
+    ];
+
+    function defaultState() {
+      return {
+        day: 1,
+        energy: 10,
+        stress: 0,
+        attention: 10,
+        exp: 0
+      };
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(STATE_KEY);
+      if (!raw) {
+        const s = defaultState();
+        saveState(s);
+        return s;
+      }
+      try {
+        return Object.assign(defaultState(), JSON.parse(raw));
+      } catch (e) {
+        const s = defaultState();
+        saveState(s);
+        return s;
+      }
+    }
+
+    function saveState(state) {
+      localStorage.setItem(STATE_KEY, JSON.stringify(state));
+    }
+
+    // ===== 界面渲染 =====
+    function render(state) {
+      // 天数
+      document.getElementById('dayLabel').textContent = '第 ' + state.day + ' 天';
+      document.title = '学习模拟 - 第' + state.day + '天';
+
+      // 学习境界 + 经验条
+      let idx = 0;
+      for (let i = 0; i < REALMS.length; i++) {
+        if (state.exp >= REALMS[i].min) idx = i;
+      }
+      // 学习境界图片（realm 的 name 即为图片文件名，如：学渣境/学子境/…）
+      const realmImgEl = document.getElementById('realmImg');
+      if (realmImgEl) {
+        realmImgEl.src = '境界图片/' + REALMS[idx].name + '.png';
+        realmImgEl.alt = REALMS[idx].name;
+      }
+
+      const nextMin = (idx + 1 < REALMS.length) ? REALMS[idx + 1].min : null;
+      if (nextMin !== null) {
+        const curMin = REALMS[idx].min;
+        const span = nextMin - curMin;
+        const done = state.exp - curMin;
+        const pct = Math.min(100, Math.round(done / span * 100));
+        document.getElementById('expValue').textContent = state.exp + ' / ' + nextMin;
+        document.getElementById('expFill').style.width = pct + '%';
+      } else {
+        document.getElementById('expValue').textContent = state.exp + ' / MAX';
+        document.getElementById('expFill').style.width = '100%';
+      }
+
+      // 三个数据
+      document.getElementById('energy').textContent = state.energy;
+      document.getElementById('stress').textContent = state.stress;
+      document.getElementById('attention').textContent = state.attention;
+    }
+
+    // ===== 通用提示：一行小字 渐显 → 停留 → 渐隐 =====
+    function showToast(text) {
+      const el = document.getElementById('toast');
+      el.textContent = text;
+      requestAnimationFrame(function () {
+        el.classList.add('show');
+      });
+      clearTimeout(showToast.__t);
+      showToast.__t = setTimeout(function () {
+        el.classList.remove('show');
+      }, 1600);
+    }
+
+    // ===== 睡觉提示：屏幕中央稍大文字 渐显 → 停留 → 渐隐 =====
+    function showNewDay(text) {
+      const el = document.getElementById('newday');
+      el.textContent = text;
+      requestAnimationFrame(function () {
+        el.classList.add('show');
+      });
+      clearTimeout(showNewDay.__t);
+      showNewDay.__t = setTimeout(function () {
+        el.classList.remove('show');
+      }, 1250);   // 停留 1.25s
+    }
+
+    // ===== 随机事件挂起检查：有随机事件待处理时，封锁其它按钮 =====
+    function randomEventPending() {
+      var s = loadState();
+      return !!(s && s.pendingRandomEvent);
+    }
+    function blockIfRandomPending() {
+      if (randomEventPending()) {
+        showToast('请先处理随机事件');
+        return true;
+      }
+      return false;
+    }
+
+    // ===== 睡觉提示期间的按键锁：显示“新的一天开始了”期间，其它按钮均无反应 =====
+    var uiLocked = false;   // 是否处于锁定窗口
+    function isLocked() {
+      return uiLocked;
+    }
+    function lockUI(ms) {
+      uiLocked = true;
+      clearTimeout(lockUI.__t);
+      lockUI.__t = setTimeout(function () { uiLocked = false; }, ms);
+    }
+
+    // ===== 压力值：上限 100，达到 100 则游戏失败跳结算 =====
+    const STRESS_MAX = 100;
+    // 应用压力变化并夹到 [0, 100]
+    function addStress(state, delta) {
+      state.stress = Math.min(STRESS_MAX, Math.max(0, state.stress + (delta || 0)));
+    }
+    // 压力达到上限 → 设失败标记并跳转结算界面，返回 true 表示已失败
+    function checkStressFail(state) {
+      if (state.stress >= STRESS_MAX) {
+        localStorage.setItem('study_failed', '1');
+        window.location.replace('../结算界面/index.html');
+        return true;
+      }
+      return false;
+    }
+
+    // ===== 睡觉/刷视频忘了时间：主界面内直接推进到下一天（不跳独立睡眠页）=====
+    // 非最后一天 → 推进天数、复原精力、压力+25、日志、居中渐显“新的一天开始了”。
+    // 已是第 10 天 → 跳结算（正常完成）；压力 ≥100 → 跳结算（失败）。
+    function advanceToNextDay() {
+      if (isLocked()) return;             // 提示文案显示期间再点睡觉 → 无反应
+      if (blockIfRandomPending()) return;
+      var state = loadState();
+
+      // 已是第 10 天，睡觉 → 进入结算界面（正常完成）
+      if (state.day >= 10) {
+        window.location.replace('../结算界面/index.html');
+        return;
+      }
+
+      // 进入下一天
+      var oldEnergy = state.energy;
+      state.day += 1;
+      state.energy = 10;    // 精力每天重置为 10
+      state.stress = Math.min(100, state.stress + 25);   // 压力每天增加 25，上限 100
+      // 注意力不恢复：10 天内没有任何操作能恢复注意力，只有重开新游戏才重置
+
+      // 压力值达到 100 → 游戏失败，进入结算界面（失败文案）
+      if (state.stress >= 100) {
+        localStorage.setItem('study_failed', '1');
+        saveState(state);
+        window.location.replace('../结算界面/index.html');
+        return;
+      }
+
+      saveState(state);
+
+      // 追加叙事日志（不带“第X天：”前缀，数值变化用【】框起来）
+      if (typeof LogPanel !== 'undefined') {
+        var line = '你睡觉了【';
+        if (10 - oldEnergy > 0) line += '精力值+' + (10 - oldEnergy) + '，';
+        line += '压力值+25】';
+        LogPanel.append(line);
+        LogPanel.render(
+          document.getElementById('logPanel'),
+          document.getElementById('logInner')
+        );
+      }
+
+      // 刷新主界面数据与标题
+      render(state);
+
+      // 屏幕中央渐显渐隐“新的一天开始了（第X天）”，期间锁定其它按钮
+      showNewDay('新的一天开始了（第 ' + state.day + ' 天）');
+      lockUI(1250);   // 提示显示的 1.25s 内其它按钮无反应
+    }
+
+    // ===== 睡觉：主界面直接推进到下一天，无跳转、无变暗 =====
+    document.getElementById('sleepBtn').addEventListener('click', advanceToNextDay);
+
+    // 其余按钮：进入对应功能页面
+    const actionBtn = document.querySelectorAll('.action-btn[data-target]');
+    actionBtn.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (isLocked()) return;             // 睡觉提示期间 → 无反应
+        if (blockIfRandomPending()) return;
+        const target = btn.getAttribute('data-target');
+        // 学习需要消耗精力，精力不足时不跳转，提示休息
+        if (target && target.indexOf('学习') !== -1) {
+          const state = loadState();
+          if (state.energy < 4) {
+            showToast('今天很累了，睡一觉休息恢复精力值吧');
+            return;
+          }
+        }
+        window.location.replace(target);
+      });
+    });
+
+    // ===== 玩手机：主界面直接处理，无过渡动画 =====
+    // 精力值不足（玩手机也要消耗 4 精力）时不触发任何事件，居中提示休息；
+    // 精力足够则随机触发一条事件、应用数值、刷新界面（当天内完成，无跳转）。
+    function playPhone() {
+      if (isLocked()) return;             // 睡觉提示期间 → 无反应
+      if (blockIfRandomPending()) return;
+      let state = loadState();
+      if (state.energy < 4) {
+        showToast('今天很累了，睡一觉恢复精力值吧');
+        return;                        // 不触发任何事件
+      }
+
+      // 随机挑一条事件（分支事件按当前注意力匹配）
+      const evt = PHONE_EVENTS[Math.floor(Math.random() * PHONE_EVENTS.length)];
+      let picked;
+      if (evt.branches) {
+        const att = state.attention;
+        let chosen = null;
+        for (let i = 0; i < evt.branches.length; i++) {
+          const b = evt.branches[i];
+          const lo = (typeof b.min === 'number') ? b.min : -Infinity;
+          const hi = (typeof b.max === 'number') ? b.max : Infinity;
+          if (att >= lo && att <= hi) { chosen = b; break; }
+        }
+        if (!chosen) chosen = evt.branches[evt.branches.length - 1];
+        picked = { text: evt.baseText + att + '，' + chosen.text, statText: chosen.statText, effects: chosen.effects };
+      } else {
+        picked = { text: evt.text, statText: evt.statText, effects: evt.effects };
+      }
+      picked.endDay = evt.endDay;   // 继承 endDay 标记（之前漏了这一行，导致刷视频事件不跳转）
+
+      const e = picked.effects;
+      state.energy = Math.min(10, Math.max(0, state.energy + (e.energy || 0)));   // 精力值 [0,10]
+      addStress(state, e.stress);   // 压力值夹到 [0, 100]
+      state.attention += (e.attention || 0);
+      state.exp = Math.max(0, state.exp + (e.exp || 0));            // 经验值最低为 0
+
+      // 先保存事件数值（endDay 跳转到睡觉页后，睡眠页也要读到这些数值）
+      saveState(state);
+
+      // 压力值达到 100 → 游戏失败，跳转结算界面（优先级高于 endDay 等后续逻辑）
+      if (checkStressFail(state)) return;
+
+      // 追加叙事日志（不带“第X天：”前缀，数值变化用【】框起）
+      if (typeof LogPanel !== 'undefined') {
+        LogPanel.append(picked.text + picked.statText);
+      }
+
+      // 特殊事件（endDay：刷视频忘了时间）→ 自动触发“睡觉”：
+      // 不跳独立页面，直接在主界面推进到下一天（第 10 天则进入结算界面）。
+      if (picked.endDay) {
+        advanceToNextDay();
+        return;
+      }
+
+      // 其余事件：无过渡动画，直接刷新主界面的状态与日志（当天内完成）
+      render(state);
+      LogPanel.render(
+        document.getElementById('logPanel'),
+        document.getElementById('logInner')
+      );
+
+      // 玩手机完成后：40% 概率触发随机事件
+      if (typeof RandomEvent !== 'undefined') RandomEvent.maybeTrigger();
+    }
+
+    document.getElementById('phoneBtn').addEventListener('click', playPhone);
+
+    // ===== 休闲：主界面直接处理，随机刷一条休闲事件，更新数值并追加日志 =====
+    function leisure() {
+      if (isLocked()) return;             // 睡觉提示期间 → 无反应
+      if (blockIfRandomPending()) return;
+      const state = loadState();
+      if (state.energy < 3) {          // 休闲也要消耗 3 精力，不足时不触发，居中提示休息
+        showToast('今天很累了，睡一觉恢复精力值吧');
+        return;                        // 不触发任何事件
+      }
+      const evt = LEISURE_EVENTS[Math.floor(Math.random() * LEISURE_EVENTS.length)];
+      const e = evt.effects;
+      state.energy = Math.min(10, Math.max(0, state.energy + (e.energy || 0)));   // 精力值 [0,10]
+      addStress(state, e.stress);   // 压力值夹到 [0, 100]
+      state.attention += (e.attention || 0);
+      state.exp = Math.max(0, state.exp + (e.exp || 0));            // 经验值最低为 0
+      saveState(state);
+
+      // 压力值达到 100 → 游戏失败，跳转结算界面
+      if (checkStressFail(state)) return;
+
+      // 追加叙事日志（不带“第X天：”前缀，数值变化渲染为（…）细体）
+      if (typeof LogPanel !== 'undefined') {
+        LogPanel.append(evt.text + evt.statText);
+      }
+
+      // 无过渡动画：直接刷新主界面的状态与日志（当天内完成）
+      render(state);
+      LogPanel.render(
+        document.getElementById('logPanel'),
+        document.getElementById('logInner')
+      );
+
+      // 休闲完成后：40% 概率触发随机事件
+      if (typeof RandomEvent !== 'undefined') RandomEvent.maybeTrigger();
+    }
+
+    document.getElementById('leisureBtn').addEventListener('click', leisure);
+
+    // ===== 学习结果提示：三行黑色小字 渐显 → 停留1秒 → 渐隐 =====
+    function showStudyReport() {
+      const raw = localStorage.getItem('study_report');
+      if (!raw) return;
+      localStorage.removeItem('study_report');
+      let r = null;
+      try { r = JSON.parse(raw); } catch (e) { r = null; }
+      if (!r) return;
+
+      const rep = document.getElementById('report');
+      rep.innerHTML =
+        '<div class="report-line">精力值' + r.energy + '</div>' +
+        '<div class="report-line">压力值+' + r.stress + '</div>' +
+        '<div class="report-line">经验值+' + r.exp + '</div>';
+
+      // 强制重排后加类，触发渐显
+      requestAnimationFrame(function () {
+        rep.classList.add('show');
+      });
+
+      // 停留约 1 秒后渐隐
+      setTimeout(function () {
+        rep.classList.remove('show');
+        setTimeout(function () { rep.innerHTML = ''; }, 600);
+      }, 1400);
+    }
+
+    // 初始化
+    render(loadState());
+    showStudyReport();
+    // 渲染滚动叙事日志并跳到底部
+    LogPanel.render(
+      document.getElementById('logPanel'),
+      document.getElementById('logInner')
+    );
+
+    // ===== 随机事件：传入日志面板元素 + 让结算后能刷新主界面 =====
+    if (typeof RandomEvent !== 'undefined') {
+      RandomEvent.init(
+        document.getElementById('logPanel'),
+        document.getElementById('logInner')
+      );
+      // 随机事件点选选项后，用它刷新主界面的状态显示
+      window.refreshMain = function (s) { render(s); };
+
+      // 学习页完成返回主界面 → 40% 概率触发随机事件
+      if (localStorage.getItem('random_trigger_pending') === '1') {
+        localStorage.removeItem('random_trigger_pending');
+        RandomEvent.maybeTrigger();
+      } else {
+        // 页面加载：恢复上一次未选择完的随机事件（如刷新页面）
+        RandomEvent.renderPending();
+      }
+    }
+  </script>
+</body>
+</html>

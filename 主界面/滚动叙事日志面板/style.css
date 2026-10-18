@@ -1,0 +1,61 @@
+/* ===== 滚动叙事日志面板 样式 =====
+   说明：此 CSS 由主界面通过 <link> 引入。
+   纵向滚动、新文本追加到底部自动跳转、滚动条细线。 */
+
+.log-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;         /* 内容超出一屏可上下滚动 */
+  overflow-x: hidden;
+  background: rgba(255, 255, 255, var(--glass-alpha));   /* 半透明白 + 磨砂（变量来自主界面 style.css） */
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 12px;
+  padding: 10px 14px;
+  /* 细滚动条 */
+  scrollbar-width: thin;               /* Firefox */
+  scrollbar-color: #c3cede transparent;
+}
+
+.log-panel::-webkit-scrollbar {
+  width: 4px;                          /* Chrome/Safari 细滚动条 */
+}
+.log-panel::-webkit-scrollbar-thumb {
+  background: #c3cede;
+  border-radius: 4px;
+}
+.log-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.log-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;                 /* 两条不同事件记录之间的间距调大 */
+}
+
+.log-entry {
+  font-family: "KaiTi", "楷体", serif;
+  font-weight: 500;                       /* 比普通略粗 */
+  font-size: 16px;
+  line-height: 1.9;                       /* 行间距略大，阅读更舒适 */
+  color: #333;
+  padding: 3px 0;
+}
+
+/* 数值变化部分 */
+.log-stat {
+  font-family: "KaiTi", "楷体", serif;
+  font-weight: 400;
+  font-size: 14px;
+  color: #767676;
+}
+
+.log-empty {
+font-family: "KaiTi", "楷体", serif;
+  font-size: 12px;
+  color: #a4b4c6;
+  text-align: center;
+  padding-top: 24px;
+}

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>数字快算</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="注意力争夺1-微信消息弹窗/style.css">
+  <link rel="stylesheet" href="注意力争夺4-虚假新闻弹窗/style.css">
+</head>
+<body>
+  <div class="phone">
+    <!-- 顶部时间条 -->
+    <div class="timer-wrap">
+      <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+      <span class="q-count" id="qCount">1 / 5</span>
+    </div>
+
+    <!-- 屏幕中央题目 -->
+    <div class="quiz">
+      <div class="question" id="question">? + ? = ?</div>
+    </div>
+
+    <!-- 下方三个选项 -->
+    <div class="options" id="options"></div>
+
+    <!-- 注意力争夺事件覆盖层：以 iframe 加载独立事件页面 -->
+    <!-- src 留空以懒加载：平时不下载，触发对应事件时才补设 src（避免开页即下载约8MB） -->
+    <div class="event-veil" id="eventVeil" hidden>
+      <iframe id="frameNairong" allowtransparency="true"></iframe>
+      <iframe id="frameVision" allowtransparency="true" hidden></iframe>
+    </div>
+  </div>
+
+  <script src="注意力争夺1-微信消息弹窗/微信消息弹窗.js"></script>
+  <script src="注意力争夺4-虚假新闻弹窗/虚假新闻弹窗.js"></script>
+  <script src="../主界面/滚动叙事日志面板/滚动叙事日志面板.js"></script>
+  <script>
+    var STATE_KEY = 'study_game_state';
+    var PER_Q = 3000;   // 每道题 3 秒
+    var TOTAL = 5;      // 一共 5 题
+    var EXP_PER = 10;   // 答对一题 +10 经验
+    var EVENT_CHANCE = 0.5; // 每道题出现 1 秒后触发注意力争夺事件的概率 (0~1)
+
+    // 注意力争夺事件进度字段：
+    //   eventDay     事件标记所属的天
+    //   eventToday   当天是否已触发过注意力争夺事件
+    //   eventCounts  每个事件(id -> 次数)在10天内的累计触发次数
+    function normalizeEventState(s) {
+      if (!s.eventCounts) s.eventCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+      // 跨天：重置"当天已触发"标记
+      if (s.eventDay !== s.day) {
+        s.eventDay = s.day;
+        s.eventToday = false;
+      }
+      if (!s.eventToday) s.eventToday = false;
+      return s;
+    }
+
+    function loadState() {
+      var s = null;
+      try {
+        var raw = localStorage.getItem(STATE_KEY);
+        if (raw) s = JSON.parse(raw);
+      } catch (e) { s = null; }
+      if (!s) s = { day: 1, energy: 10, stress: 0, attention: 10, exp: 0 };
+      return normalizeEventState(s);
+    }
+
+    function saveState(s) {
+      localStorage.setItem(STATE_KEY, JSON.stringify(s));
+    }
+
+    function randInt(lo, hi) {
+      return lo + Math.floor(Math.random() * (hi - lo + 1));
+    }
+
+    // 生成一个加减乘除算式（100 以内指运算数字在 100 以内，答案可超过 100）
+    function genQuestion() {
+      // 加大乘除法的权重，让乘除出现得更频繁
+      var ops = ['+', '-', '+', '-', '×', '÷'];
+      var op = ops[Math.floor(Math.random() * ops.length)];
+      var a, b, ans;
+      if (op === '+') {
+        a = randInt(10, 80);
+        b = randInt(1, 89);
+        ans = a + b;
+      } else if (op === '-') {
+        a = randInt(20, 99);
+        b = randInt(1, a - 1);
+        ans = a - b;
+      } else if (op === '×') {
+        a = randInt(2, 12);
+        b = randInt(2, 9);
+        ans = a * b;
+      } else { // ÷：除数与商都是整数，被除数 = 除数×商，保证整除
+        b = randInt(2, 9);
+        ans = randInt(2, Math.floor(100 / b));
+        a = b * ans;
+      }
+      return { text: a + ' ' + op + ' ' + b + ' = ?', answer: ans };
+    }
+
+    // 生成 3 个选项（含正确答案）
+    // 打乱增量顺序，避免三个选项总是连号、且正确答案恒在中间。
+function genOptions(answer) {
+    answer = Math.floor(answer);
+    const candidates = new Set([answer]);
+
+    // 1. 多类型偏差生成器：打破固定差值的直觉
+    const generateDelta = () => {
+        const type = Math.floor(Math.random() * 4);
+        switch(type) {
+            case 0: // 小幅度邻值：强迷惑，贴近正确答案
+                return (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 4) + 1);
+            case 1: // 中幅度跳值：拉开距离，避免三个数挤在一起
+                return (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 8) + 6);
+            case 2: // 比例偏差：打破加减规律，用倍数生成干扰项
+                const ratio = 0.7 + Math.random() * 1.1;
+                return Math.floor(answer * ratio) - answer;
+            case 3: // 数位错位：个位/十位单独偏移，视觉更零散
+                const digit = Math.pow(10, Math.floor(Math.random() * 2));
+                return (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 9) + 1) * digit;
+        }
+    };
+
+    // 2. 随机生成干扰项，直到凑够3个
+    let safety = 0;
+    while (candidates.size < 3 && safety < 50) {
+        safety++;
+        const delta = generateDelta();
+        const value = answer + delta;
+        if (value >= 0 && Number.isInteger(value)) {
+            candidates.add(value);
+        }
+    }
+
+    // 3. 兜底：随机大步长，完全避免固定规律
+    let extraStep = Math.floor(Math.random() * 10) + 15;
+    while (candidates.size < 3) {
+        const value = answer + extraStep;
+        if (value >= 0) candidates.add(value);
+        extraStep += Math.floor(Math.random() * 10) + 5;
+    }
+
+    // 4. 反等差数列检测：破坏规整感
+    let arr = Array.from(candidates);
+    let sorted = [...arr].sort((a,b) => a - b);
+    if (sorted[1] - sorted[0] === sorted[2] - sorted[1]) {
+        const wrongIdx = arr.findIndex(v => v !== answer);
+        arr.splice(wrongIdx, 1);
+        arr.push(answer + (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 20) + 10));
+        arr = arr.filter(v => v >= 0);
+        while (arr.length < 3) {
+            arr.push(Math.abs(answer + Math.floor(Math.random() * 30)));
+        }
+    }
+
+    // 5. Fisher-Yates 真正随机洗牌，比 sort 更均匀
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+
+    return arr;
+}
+
+
+    var startAttention = loadState().attention; // 本次学习开始时的注意力，用于日志
+    var index = 0, correct = 0, currentAnswer = null;
+    var locked = false, timer = null, lastTick = 0, remaining = PER_Q;
+    var eventTimer = null, eventShown = false;
+
+    var questionEl = document.getElementById('question');
+    var optionsEl = document.getElementById('options');
+    var timerFill = document.getElementById('timerFill');
+    var qCount = document.getElementById('qCount');
+    var eventVeil = document.getElementById('eventVeil');
+    var frameNairong = document.getElementById('frameNairong');
+    var frameVision = document.getElementById('frameVision');
+
+    // ===== 倒计时（支持暂停/继续）=====
+    function startCountdown() {
+      lastTick = Date.now();
+      timer = setInterval(function () {
+        var now = Date.now();
+        var elapsed = now - lastTick;
+        lastTick = now;
+        remaining = Math.max(0, remaining - elapsed);
+        timerFill.style.width = Math.max(0, remaining / PER_Q * 100) + '%';
+        if (remaining <= 0) {
+          clearInterval(timer); timer = null;
+          timerFill.style.width = '0%';
+          handlePick(null, null); // 超时计为答错
+        }
+      }, 50);
+    }
+
+    function pauseCountdown() {
+      clearInterval(timer); timer = null;
+    }
+
+    function resumeCountdown() {
+      if (!timer && remaining > 0) startCountdown();
+    }
+
+    // ===== 渲染题目 =====
+    function renderQuestion() {
+      var q = genQuestion();
+      currentAnswer = q.answer;
+      locked = false;            // 每道题重新解锁，否则下一题点击/超时无效
+      remaining = PER_Q;
+      eventShown = false;
+      clearTimeout(eventTimer);
+
+      questionEl.textContent = q.text;
+      optionsEl.innerHTML = '';
+      genOptions(q.answer).forEach(function (val) {
+        var b = document.createElement('button');
+        b.className = 'opt';
+        b.textContent = val;
+        b.addEventListener('click', function () {
+          handlePick(val, b);
+        });
+        optionsEl.appendChild(b);
+      });
+      qCount.textContent = (index + 1) + ' / ' + TOTAL;
+      startCountdown();
+
+      // 题目出现 1 秒后，满足调度规则时按 EVENT_CHANCE 概率触发注意力争夺事件
+      eventTimer = setTimeout(function () {
+        if (!locked && !eventShown) {
+          var s = loadState();                       // 已含跨天重置
+          if (canTriggerEvent(s) && Math.random() < EVENT_CHANCE) {
+            var pick = pickEvent(s);                 // 只从剩余次数>0的事件里选，并记录
+            if (pick) {
+              eventShown = true;
+              saveState(s);                          // 保存当天已触发 + 累计次数
+              pick.open();
+            }
+          }
+        }
+      }, 1000);
+    }
+
+    function handlePick(val, btn) {
+      if (locked) return;
+      locked = true;
+      // 若正处于微信弹窗事件中，先取消它（点击选项直接做题进入下一题）
+      if (typeof WeixinEvent !== 'undefined' && WeixinEvent.isActive()) {
+        WeixinEvent.cancel();
+      }
+      // 若正处于虚假新闻弹窗事件中，同样先取消（点击选项直接进入下一题）
+      if (typeof FakeNewsEvent !== 'undefined' && FakeNewsEvent.isActive()) {
+        FakeNewsEvent.cancel();
+      }
+      clearInterval(timer); timer = null;
+      clearTimeout(eventTimer);
+      var right = (val === currentAnswer);
+      if (right) correct += 1;
+      advance();               // 立刻进入下一题，无跳转延迟
+    }
+
+    function advance() {
+      index += 1;
+      if (index < TOTAL) {
+        renderQuestion();
+      } else {
+        finish();
+      }
+    }
+
+    // ===== 已实现的注意力争夺事件注册表 =====
+    var EVENTS = [
+      { id: 1, name: '微信消息弹窗', open: openWeixin },
+      { id: 2, name: '奶龙捧腹笑', open: openNairong },
+      { id: 3, name: '视错觉弹窗', open: openVision },
+      { id: 4, name: '虚假新闻弹窗', open: openFakeNews }
+    ];
+
+    // ===== 注意力争夺事件的调度规则 =====
+    var EVENT_DAY_MIN = 3;   // 从第3天(含)起才会出现注意力争夺事件
+    var EVENT_MAX = 2;       // 单个事件在10天内最多出现的次数
+
+    // 当前是否还能触发注意力争夺事件：第3天才起 + 当天还没触发过 + 还有可用次数的事件
+    function canTriggerEvent(s) {
+      if (s.day < EVENT_DAY_MIN) return false;       // 第三天之前不出现
+      if (s.eventToday) return false;                // 当天最多一次
+      for (var i = 0; i < EVENTS.length; i++) {
+        if ((s.eventCounts[EVENTS[i].id] || 0) < EVENT_MAX) return true;
+      }
+      return false;                                  // 所有事件次数都用完了
+    }
+
+    // 从"剩余次数>0"的事件里随机挑一个，累加次数并标记当天已触发，返回该事件
+    function pickEvent(s) {
+      var avail = [];
+      for (var i = 0; i < EVENTS.length; i++) {
+        if ((s.eventCounts[EVENTS[i].id] || 0) < EVENT_MAX) avail.push(EVENTS[i]);
+      }
+      if (avail.length === 0) return null;
+      var pick = avail[Math.floor(Math.random() * avail.length)];
+      s.eventCounts[pick.id] = (s.eventCounts[pick.id] || 0) + 1;
+      s.eventToday = true;
+      return pick;
+    }
+
+
+    // 事件1：微信消息弹窗（不使界面变暗）
+    function openWeixin() {
+      if (typeof WeixinEvent !== 'undefined') {
+        WeixinEvent.show();   // 内部会暂停时间条
+      }
+    }
+
+    // 事件2：奶龙捧腹笑（iframe 覆盖层，界面变暗）
+    function openNairong() {
+      pauseCountdown();        // 暂停题目时间条
+      // 懒加载：第一次触发时才加载 iframe，避免开页即下载奶龙两张精灵图（约6.8MB）
+      if (!frameNairong.getAttribute('src')) {
+        frameNairong.src = '注意力争夺2-奶龙捧腹笑/index.html';
+      }
+      frameNairong.hidden = false;
+      frameVision.hidden = true;
+      eventVeil.hidden = false;
+    }
+
+    // 事件3：视错觉弹窗（iframe 覆盖层，界面变暗）
+    function openVision() {
+      pauseCountdown();        // 暂停题目时间条
+      frameNairong.hidden = true;
+      frameVision.hidden = false;
+      // 每次打开都重载一次，重置回问问题页面（iframe 常驻，需复位到第一屏）
+      frameVision.src = '注意力争夺3-视错觉弹窗/index.html?v=' + Date.now();
+      eventVeil.hidden = false;
+    }
+
+    // 事件4：虚假新闻弹窗（不使界面变暗，仅弹出顶部消息）
+    function openFakeNews() {
+      if (typeof FakeNewsEvent !== 'undefined') {
+        FakeNewsEvent.show();   // 内部会暂停并隐藏时间条
+      }
+    }
+
+    function closeEvent() {
+      eventVeil.hidden = true;
+      resumeCountdown();
+    }
+
+    // 接收事件页面的消息
+    window.addEventListener('message', function (e) {
+      var d = e.data;
+      if (!d) return;
+
+      // 事件2：奶龙捧腹笑
+      if (d.src === 'nairong') {
+        if (d.action === 'x') {
+          // 选择一（未点肚肚）：点叉，继续做题，不扣注意力
+          closeEvent();
+        } else if (d.action === 'x-deduct' || d.action === 'laugh-done') {
+          // 已点肚肚（选择二）：中途点叉或看完，均扣注意力-1
+          var s = loadState();
+          s.attention = Math.max(0, s.attention - 1);
+          saveState(s);
+          closeEvent();
+        }
+        return;
+      }
+
+      // 事件3：视错觉弹窗
+      if (d.src === 'vision') {
+        if (d.action === 'picked') {
+          // 选择二：点了选项 → 记录注意力-1，留在覆盖层显示结果图
+          var v = loadState();
+          v.attention = Math.max(0, v.attention - 1);
+          saveState(v);
+        } else if (d.action === 'close') {
+          // 点叉：关闭覆盖层，时间条继续
+          closeEvent();
+        }
+        return;
+      }
+    });
+
+    // ===== 完成 =====
+    function finish() {
+      var expGain = correct * EXP_PER;
+      // 重新读取最新状态（包含事件中扣减的注意力），在此基础上结算
+      var s = loadState();
+      var attentionDelta = Math.max(0, startAttention - s.attention);
+      s.energy = Math.min(10, Math.max(0, s.energy - 4));   // 精力值上限 10
+      s.stress = Math.min(100, s.stress + 20);   // 压力值上限 100
+      s.exp += expGain;
+      saveState(s);
+
+      // 压力值达到 100 → 游戏失败，进入结算界面（失败文案）
+      if (s.stress >= 100) {
+        localStorage.setItem('study_failed', '1');
+        window.location.replace('../结算界面/index.html');
+        return;
+      }
+
+      localStorage.setItem('study_report', JSON.stringify({
+        energy: -4,
+        stress: 20,
+        exp: expGain
+      }));
+
+      // 追加叙事日志（不带“第X天：”前缀，数值变化用【】框起来）
+      if (typeof LogPanel !== 'undefined') {
+        var line = '你学习了【精力值-4，压力值+20，经验值+' + expGain;
+        if (attentionDelta > 0) line += '，注意力-' + attentionDelta;
+        line += '】';
+        LogPanel.append(line);
+      }
+
+      // 完成学习返回主界面后，触发随机事件判定（主界面读取该标记）
+      localStorage.setItem('random_trigger_pending', '1');
+
+      window.location.replace('../主界面/index.html');
+    }
+
+    renderQuestion();
+  </script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>视错觉弹窗</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 第一屏：鲁宾之杯 + 问题 -->
+  <div class="scene" id="qScene">
+    <button class="close" id="qClose" aria-label="关闭">×</button>
+    <img class="cup" src="鲁宾之杯.png" alt="鲁宾之杯">
+    <p class="qtext">据说智商 120 以上的人第一眼看到的是...<br>你第一眼看到的是什么？</p>
+    <div class="opts">
+      <button class="opt" id="optA">A：两个人</button>
+      <button class="opt" id="optB">B：酒杯</button>
+    </div>
+  </div>
+
+  <!-- 第二屏：结果图 -->
+  <div class="scene" id="rScene" hidden>
+    <button class="close" id="rClose" aria-label="关闭">×</button>
+    <img class="result" src="别信没依据的评测.png" alt="别信没依据的评测">
+  </div>
+
+  <script>
+    // 通知父页面（学习页）
+    function tell(action) {
+      try { parent.postMessage({ src: 'vision', action: action }, '*'); } catch (e) { /* ignore */ }
+    }
+
+    var qScene = document.getElementById('qScene');
+    var rScene = document.getElementById('rScene');
+
+    // 选择一：点叉 → 关闭，不扣注意力
+    document.getElementById('qClose').addEventListener('click', function () {
+      tell('close');
+    });
+
+    // 选择二：点选项 → 记录注意力-1，切换到结果图
+    function onPick() {
+      tell('picked');
+      qScene.style.display = 'none';
+      rScene.hidden = false;
+    }
+    document.getElementById('optA').addEventListener('click', onPick);
+    document.getElementById('optB').addEventListener('click', onPick);
+
+    // 结果图点叉 → 关闭
+    document.getElementById('rClose').addEventListener('click', function () {
+      tell('close');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>十天学习模拟</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="phone">
+    <div class="panel">
+      <div class="icon">📚</div>
+      <h1 class="title">十天学习模拟</h1>
+      <p class="sub">劳逸结合 · 一路向上</p>
+
+      <!-- 玩法简介 -->
+      <div class="intro">
+        <p>模拟 10 天学习之旅，通过<b>学习 / 玩手机 / 休闲 / 睡觉</b>积累经验、冲击境界。</p>
+        <p>注意：<b>压力值满 100</b> 会游戏失败，记得劳逸结合哦！</p>
+      </div>
+
+      <a class="start-btn" id="startBtn" href="主界面/index.html" onclick="location.replace('主界面/index.html'); return false;">开始游戏</a>
+    </div>
+  </div>
+
+  <script>
+    // 入口页：点击“开始游戏”直接进入主界面
+    // （若想开局重置存档，可取消下面这行注释）
+    // localStorage.clear();
+  </script>
+
+  <script>
+    // ===== 后台预加载：趁入口页停留时提前下载主界面/学习页图片 =====
+    // 用 new Image() 非阻塞预加载，浏览器会缓存这些图片，进入主界面/学习页时秒开。
+    (function (urls) {
+      for (var i = 0; i < urls.length; i++) {
+        var im = new Image();
+        im.src = urls[i];
+      }
+    })([
+      // 主界面：背景 + 6张境界图 + 4个按键图
+      '主界面/背景图片.png',
+      '主界面/境界图片/学渣境.png',
+      '主界面/境界图片/学子境.png',
+      '主界面/境界图片/学友境.png',
+      '主界面/境界图片/学者境.png',
+      '主界面/境界图片/学霸境.png',
+      '主界面/境界图片/学神境.png',
+      '主界面/按键图片/学习.png',
+      '主界面/按键图片/玩手机.png',
+      '主界面/按键图片/休闲.png',
+      '主界面/按键图片/睡觉.png',
+      // 学习页 - 注意力争夺事件
+      '按键【学习】/注意力争夺1-微信消息弹窗/漫画.png',
+      '按键【学习】/注意力争夺1-微信消息弹窗/微信红包弹窗.png',
+      '按键【学习】/注意力争夺2-奶龙捧腹笑/idle.png',
+      '按键【学习】/注意力争夺2-奶龙捧腹笑/laugh.png',
+      '按键【学习】/注意力争夺3-视错觉弹窗/鲁宾之杯.png',
+      '按键【学习】/注意力争夺3-视错觉弹窗/别信没依据的评测.png',
+      '按键【学习】/注意力争夺4-虚假新闻弹窗/虚假新闻弹窗.png',
+      '按键【学习】/注意力争夺4-虚假新闻弹窗/虚假新闻发布会图片.png',
+      '按键【学习】/注意力争夺4-虚假新闻弹窗/重磅通知.png'
+    ]);
+  </script>
+</body>
+</html>

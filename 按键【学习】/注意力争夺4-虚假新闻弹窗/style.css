@@ -1,0 +1,191 @@
+/* ===== 注意力争夺4-虚假新闻弹窗 样式 =====
+   说明：此 CSS 由答题页通过 <link> 引入。
+   弹窗置于顶部（遮住进度条，不挡选项，界面不变暗）；
+   点击弹窗后打开全屏虚假新闻文章页（无时间限制，滚动到末尾出现选择题）。 */
+
+/* ---- 顶部消息弹窗（模拟手机消息弹出，界面不变暗） ---- */
+.fn-popup {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;                  /* 长度与手机屏幕宽度一致 */
+  z-index: 45;                  /* 高于进度条，但低于文章页 */
+  cursor: pointer;
+  pointer-events: auto;         /* 可点击 */
+  animation: fn-slide 0.3s ease;
+}
+
+.fn-popup img {
+  display: block;
+  width: 100%;
+  /* 不加 box-shadow：阴影按 <img> 的矩形盒绘制，会画出透明背景的“边界/白边”，
+     与注意力争夺1-微信消息弹窗 保持一致，保留 png 自身的透明背景效果 */
+}
+
+@keyframes fn-slide {
+  from { transform: translateY(-115%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+/* ---- 全屏虚假新闻文章页（仿真实资讯页，白底可上下滑动） ---- */
+.fn-page {
+  position: absolute;
+  inset: 0;
+  z-index: 60;                  /* 最高层，盖住题目与弹窗 */
+  background: #fff;             /* 不透明白底，模拟新闻 App 页面 */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 18px 40px;
+  box-sizing: border-box;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: #2c3340;
+  line-height: 1.75;
+  font-size: 16px;
+}
+
+/* 页眉：来源 + 时间 */
+.fn-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eceef2;
+  font-size: 13px;
+  color: #8a94a6;
+}
+
+.fn-reporter {
+  font-weight: 700;
+  color: #2c3340;
+}
+
+/* 标题区 */
+.fn-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #15202b;
+  line-height: 1.4;
+  margin: 14px 0 6px;
+  letter-spacing: 0.5px;
+}
+
+.fn-sub {
+  font-size: 14px;
+  color: #6b7686;
+  margin-bottom: 14px;
+}
+
+/* 重磅通知横幅 */
+.fn-notice {
+  display: block;
+  width: 100%;
+  margin: 6px 0 10px;
+  border-radius: 8px;
+}
+
+/* 新闻发布会配图 */
+.fn-press {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+  margin: 8px 0 0;
+}
+
+.fn-caption {
+  font-size: 13px;
+  color: #97a0b0;
+  line-height: 1.5;
+  margin: 6px 0 14px;
+}
+
+/* 正文段落 */
+.fn-body {
+  margin: 12px 0;
+  text-align: justify;
+  color: #2c3340;
+}
+
+.fn-body strong {
+  color: #15202b;
+}
+
+/* 分节小标题 */
+.fn-section {
+  font-size: 17px;
+  font-weight: 700;
+  color: #15202b;
+  margin: 20px 0 8px;
+}
+
+/* 引用块（模拟“官方回应”） */
+.fn-quote {
+  border-left: 3px solid #c9a227;
+  background: #faf8f1;
+  padding: 10px 14px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  color: #5c5650;
+  font-size: 15px;
+}
+
+/* 文末免责声明 */
+.fn-end {
+  margin-top: 22px;
+  padding-top: 12px;
+  border-top: 1px dashed #e2e6ec;
+  font-size: 12px;
+  color: #a8b0bf;
+  text-align: center;
+}
+
+/* ---- 底部选择题（滚动到末尾显示，风格极其简洁） ---- */
+.fn-choose {
+  margin-top: 22px;
+  padding: 20px 0 6px;
+  border-top: 1px solid #eef0f4;
+  text-align: center;
+  animation: fn-fadein 0.4s ease;
+}
+
+.fn-choose .fn-q {
+  font-size: 17px;
+  font-weight: 700;
+  color: #15202b;
+  margin-bottom: 16px;
+}
+
+.fn-btns {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+}
+
+.fn-btn {
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 34px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.08s ease, opacity 0.2s ease;
+}
+
+.fn-btn:active {
+  transform: scale(0.96);
+}
+
+.fn-btn.believe {
+  background: #eef1f5;
+  color: #6b7686;
+}
+
+.fn-btn.doubt {
+  background: #2743c4;
+  color: #fff;
+}
+
+@keyframes fn-fadein {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

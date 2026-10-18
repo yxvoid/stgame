@@ -1,0 +1,56 @@
+/* ===== 随机事件卡片 & 选项按钮 =====
+   显示在滚动叙事日志面板内。
+   主界面通过 <link> 引入。 */
+
+/* 事件卡片：与日志条目风格一致（楷书） */
+.random-card {
+  font-family: "KaiTi", "楷体", serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.9;
+  color: #333;
+  padding: 5px 0 2px;
+}
+
+/* 「（随机事件）」前缀标记 */
+.random-tag {
+  color: #ed4f33;
+  font-weight: 700;
+}
+
+/* 选项按钮行 */
+.random-options {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.random-btn {
+  font-family: "KaiTi", "楷体", serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #404041;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 18px;
+  cursor: pointer;
+  transition: transform .08s ease, opacity .2s ease;
+}
+
+/* 第一个选项：暖橙色 */
+.random-btn.warm {
+  background: linear-gradient(135deg, #d4e9fc, hsl(206, 97%, 73%));
+  box-shadow: 0 2px 6px rgba(96, 94, 93, 0.35);
+}
+
+/* 第二个选项：清爽蓝 */
+.random-btn.cool {
+  background: linear-gradient(135deg, #d4e9fc, hsl(7, 95%, 76%));
+  box-shadow: 0 2px 6px rgba(67, 69, 70, 0.35);
+}
+
+.random-btn:active { transform: translateY(1px) scale(.97); }
+.random-btn:hover { opacity: .9; }

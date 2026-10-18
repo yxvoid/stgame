@@ -1,0 +1,110 @@
+/* ===== 注意力争夺3-视错觉弹窗 样式 =====
+   说明：此页面由答题页以 iframe 覆盖层加载，透明背景透出父页面变暗效果。 */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  height: 100%;
+  background: transparent;   /* 透出父页面变暗 */
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+body {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* 第二屏默认隐藏：让 HTML 的 hidden 属性生效，
+   否则下方 .scene 的 display:flex 会把它覆盖，导致两个画面同时显示 */
+.scene[hidden] {
+  display: none !important;
+}
+
+.cup {
+  width: min(70%, 260px);
+  object-fit: contain;
+}
+
+.qtext {
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  line-height: 1.6;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+}
+
+.opts {
+  display: flex;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.opt {
+  appearance: none;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #4facfe, #00aaff);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.08s ease;
+}
+
+.opt:active {
+  transform: scale(0.97);
+}
+
+.close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1e3a5f;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.close:active {
+  transform: scale(0.92);
+}
+
+.result {
+  max-width: 92%;
+  max-height: 85%;
+  object-fit: contain;
+  border-radius: 8px;
+}

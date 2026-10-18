@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>结算界面</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="phone">
+    <div class="panel" id="panel">
+      <div class="icon" id="icon">🎓</div>
+      <h1 class="title" id="title">10 天学习已结束</h1>
+      <!-- 正常完成：搞笑评价 -->
+      <div class="eval" id="evalWrap">
+        <p class="eval-realm" id="evalRealm">你的最终境界是：学渣境</p>
+        <p class="eval-focus" id="evalFocus">专注力等级（注意力）是：≥9</p>
+        <p class="eval-text" id="evalText"></p>
+      </div>
+      <p class="sub" id="sub">恭喜你完成了本轮学习模拟</p>
+      <button class="restart-btn" id="restartBtn">重新开始</button>
+    </div>
+  </div>
+
+  <script>
+    var STATE_KEY = 'study_game_state';
+    var FAIL_KEY = 'study_failed';
+
+    // 学习境界分档（与主界面一致）
+    var REALMS = [
+      { name: '学渣境', min: 0 },
+      { name: '学子境', min: 50 },
+      { name: '学友境', min: 150 },
+      { name: '学者境', min: 300 },
+      { name: '学霸境', min: 500 },
+      { name: '学神境', min: 800 }
+    ];
+
+    // 搞笑评价表：境界 × 专注力等级（专注力 = 注意力）
+    var EVAL = {
+      '学渣境': {
+        '<3':  '你全程摸鱼划水，十天基本没往脑子里进东西，纯纯凑数式学习。',
+        '3-6': '你三天打鱼两天晒网，知识点学得零零散散，全靠临阵磨枪硬撑。',
+        '6-9': '你底子虽然薄弱，但全程坐得住、肯下功夫，态度摆在这里，进步只是时间问题。',
+        '≥9':  '你起点虽低，但专注力拉满，十天硬啃下不少基础内容，这份毅力比什么都值钱。'
+      },
+      '学子境': {
+        '<3':  '你上课走神下课疯，知识学完就忘，成绩一直在及格线边缘晃悠。',
+        '3-6': '你学习状态时好时坏，知识点掌握得半半拉拉，不上不下没什么起色。',
+        '6-9': '你稳扎稳打走完十天，基础打得很扎实，按这个节奏往上走只是早晚的事。',
+        '≥9':  '你心无旁骛啃完所有基础内容，功底打得极牢，后续提升的后劲非常足。'
+      },
+      '学友境': {
+        '<3':  '你仗着有点小聪明就偷懒，成绩忽上忽下，基础飘着总容易翻车。',
+        '3-6': '你学习全看心情，状态好能冲上游，状态差就掉回中游，发挥特别不稳定。',
+        '6-9': '你稳居班级上游，踏实肯钻，普通难题都能拿下，是大家眼里靠谱的选手。',
+        '≥9':  '你卯足劲深耕了十天，知识点嚼得透透的，距离学霸就差最后一层窗户纸。'
+      },
+      '学者境': {
+        '<3':  '你总靠天赋吃老本，知识体系留着不少漏洞，遇到难题就容易卡壳。',
+        '3-6': '你维持着优等生的位次，但不够上心，总留着几分余力没使出来。',
+        '6-9': '你稳坐优等生梯队，偏题怪题都啃得下来，是老师眼里的重点种子选手。',
+        '≥9':  '你把知识体系打磨得严丝合缝，连细节都没放过，一只脚已经踏进学霸行列。'
+      },
+      '学霸境': {
+        '<3':  '你全靠天赋撑着排名，看着轻松实则根基不稳，稍不注意就会掉出第一梯队。',
+        '3-6': '你稳稳保持着顶尖成绩，但没完全发力，本来能走得更远，可惜有点留力。',
+        '6-9': '你常年垄断年级前列，知识没死角，清北的入场券已经稳稳攥在手里。',
+        '≥9':  '你学到连出题思路都摸透了，考试如同开卷，距离学神境界只差一步之遥。'
+      },
+      '学神境': {
+        '<3':  '你纯靠天赋登顶，看着轻松写意，但总留着几分余力，本可以触及更高的高度。',
+        '3-6': '你轻轻松松拿下学神段位，实力足够，但没完全爆发，还有不少潜力没挖。',
+        '6-9': '你天赋和努力双在线，十天把学识打磨到极致，顶尖学府随便挑，前路一片坦途。',
+        '≥9':  '你天赋与专注力双双拉满，十天学到物我两忘，清北只是起点，未来不可限量。'
+      }
+    };
+
+    function realmName(exp) {
+      var name = REALMS[0].name;
+      for (var i = 0; i < REALMS.length; i++) {
+        if (exp >= REALMS[i].min) name = REALMS[i].name;
+      }
+      return name;
+    }
+
+    // 专注力等级（由注意力划分）：<3 / 3-6 / 6-9 / ≥9
+    function focusLevel(att) {
+      if (att < 3) return '<3';
+      if (att < 6) return '3-6';
+      if (att < 9) return '6-9';
+      return '≥9';
+    }
+
+    function loadState() {
+      try {
+        var raw = localStorage.getItem(STATE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) { /* ignore */ }
+      return { day: 10, energy: 0, stress: 0, attention: 0, exp: 0 };
+    }
+
+    // ===== 失败：压力值过高 =====
+    if (localStorage.getItem(FAIL_KEY) === '1') {
+      localStorage.removeItem(FAIL_KEY);
+      document.getElementById('panel').classList.add('fail');
+      document.getElementById('icon').textContent = '';
+      document.getElementById('title').textContent = '压力值过高，游戏失败';
+      document.getElementById('evalWrap').style.display = 'none';
+      document.getElementById('sub').textContent = '要注意劳逸结合哦';
+    } else {
+      // ===== 正常完成 10 天：显示搞笑评价 =====
+      var s = loadState();
+      var realm = realmName(s.exp);
+      var fLevel = focusLevel(s.attention);   // 用分档选中对应的搞笑文案
+      document.getElementById('evalRealm').textContent = '你的最终境界是：' + realm;
+      document.getElementById('evalFocus').textContent = '注意力等级是：' + s.attention;
+      document.getElementById('evalText').textContent = EVAL[realm][fLevel];
+    }
+
+    // 重置数据，开启新一轮游戏
+    document.getElementById('restartBtn').addEventListener('click', function () {
+      localStorage.removeItem(STATE_KEY);
+      localStorage.removeItem('study_report');
+      localStorage.removeItem('study_log');   // 清空叙事日志
+      window.location.replace('../主界面/index.html');
+    });
+  </script>
+</body>
+</html>

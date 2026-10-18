@@ -1,0 +1,104 @@
+/* ===== 入口页样式（与游戏其它页面同尺寸风格）===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  height: 100%;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+body {
+  background: #dfe8f0;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* 手机外框：与其它页面相同尺寸 */
+.phone {
+  width: 100%;
+  max-width: 420px;
+  height: 100vh;
+  height: 100dvh;
+  background: linear-gradient(180deg, #2b3a67 0%, #17203d 100%);
+  padding: 24px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel {
+  width: 100%;
+  text-align: center;
+  color: #fff;
+}
+
+.icon {
+  font-size: 64px;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 0 16px rgba(255, 209, 102, 0.5));
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+}
+
+.sub {
+  font-size: 14px;
+  color: #cdd8ff;
+  letter-spacing: 2px;
+  margin-bottom: 30px;
+}
+
+/* 玩法简介卡片 */
+.intro {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 16px 18px;
+  font-size: 14px;
+  line-height: 1.9;
+  color: #e8ecff;
+  text-align: left;
+  letter-spacing: 0.5px;
+  margin-bottom: 34px;
+}
+
+.intro b {
+  color: #ffd166;
+}
+
+.intro p + p {
+  margin-top: 10px;
+}
+
+/* 开始按钮 */
+.start-btn {
+  appearance: none;
+  display: inline-block;
+  border: none;
+  border-radius: 28px;
+  width: 80%;
+  max-width: 280px;
+  padding: 15px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  cursor: pointer;
+  text-decoration: none;
+  color: #1e2b4f;
+  background: linear-gradient(135deg, #ffd166, #ff9f43);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  transition: transform 0.08s ease;
+}
+
+.start-btn:active {
+  transform: scale(0.97);
+}
