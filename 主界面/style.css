@@ -145,7 +145,7 @@ body {
 
 /* 用伪元素加冒号，无需修改HTML */
 .stat-label::after {
-  content: "：";
+  content: ":";
 }
 
 .stat-label {
